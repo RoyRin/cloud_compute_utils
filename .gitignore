@@ -1,0 +1,6 @@
+gcp
+.venv
+data/
+secrets/
+assets/
+**/__pycache__

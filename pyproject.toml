@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "cloud_compute_utils"
+version = "0.1.0"
+description = ""
+
+authors = ["Roy Rinberg <royrinberg@gmail.com>"]
+
+[tool.poetry.scripts]
+deployments-cli = "cloud_compute_utils.deploy_cli:main"
+
+[tool.poetry.dependencies]
+python = ">=3.7.5 <4"
+toolz = "^0.11.2"
+ipykernel = "^6.6.0"
+PyYAML = "^6.0"
+click = "^8.0.3"
+boto3 = "1.20.32"
+
+[tool.poetry.dev-dependencies]
+bpython = "^0.21"
+yapf = "^0.31.0"
+pylint = "^2.12.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
