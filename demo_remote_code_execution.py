@@ -16,17 +16,6 @@ github = "https://github.com/RoyRin/cloud_compute_utils"
 github_dir = "cloud_compute_utils"
 
 
-def get_run_cmd_str():
-    return '''
-#!/bin/bash
-set -x
-
-cd $HOME
-cd cloud_compute_utils
-echo `/home/ubuntu/.local/bin/deployments-cli` > deployments-cli.txt
-    '''
-
-
 def get_install_cmd_str():
     return f'''
 #!/bin/bash
@@ -37,6 +26,17 @@ sudo apt install -y python3-pip
 cd $HOME
 git clone {github}
 pip install {github_dir}
+    '''
+
+
+def get_run_cmd_str():
+    return '''
+#!/bin/bash
+set -x
+
+cd $HOME
+cd cloud_compute_utils
+echo `/home/ubuntu/.local/bin/cloud-cli` > cloud-cli.txt
     '''
 
 
