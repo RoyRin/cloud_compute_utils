@@ -7,12 +7,6 @@ AWS_REGION = "us-east-1"
 DEFAULT_AMI = "ami-04505e74c0741db8d"  # ubuntu
 
 
-def print_instance(instance):
-    print(
-        f"{instance.id} : {instance.state['Name']} - {instance.public_dns_name}"
-    )
-
-
 def get_ec2_client(region=AWS_REGION):
     """get EC2 client
 
@@ -21,6 +15,17 @@ def get_ec2_client(region=AWS_REGION):
     """
     ec2 = boto3.resource('ec2', region_name=region)
     return ec2
+
+
+def get_s3_client(region=AWS_REGION):
+    return boto3.resource('s3', region_name=region)
+
+
+## EC2 stuff
+def print_instance(instance):
+    print(
+        f"{instance.id} : {instance.state['Name']} - {instance.public_dns_name}"
+    )
 
 
 def get_ec2_instances(ec2):
@@ -53,6 +58,74 @@ def get_running_instances(ec2):
     return filtered_ec2s(ec2, is_running)
 
 
+def terminate_instance(instance):
+    try:
+        instance.stop()
+        instance.terminate()
+        print(f"terminated {instance.id}")
+    except Exception as e:
+        print(f"skipping instance {instance.id} - {instance.state['Name']}")
+        # print(e)
+
+
+def terminate_all_instances(ec2, keypair_name=None):
+    if keypair_name is None:
+        instances = get_ec2_instances(ec2)
+    else:
+        instances = get_instances_with_keypair(ec2, keypair_name)
+    for instance in instances:
+        if instance.state['Name'] == 'terminated':
+            continue
+        terminate_instance(instance)
+
+
+def create_instances(
+    *,
+    ec2,
+    image_id,
+    minCount=1,
+    maxCount=1,
+    keypair_name="",
+    instance_type,
+    security_group_ids=None,
+):
+    image_id = image_id or DEFAULT_AMI
+    security_group_ids_ = security_group_ids or []
+    instance_type = instance_type or "t2.micro"
+    print(f"{image_id} {instance_type} {security_group_ids_}")
+    instances = ec2.create_instances(
+        ImageId=image_id,
+        MinCount=minCount,
+        MaxCount=maxCount,
+        InstanceType=instance_type,
+        KeyName=keypair_name,
+        SecurityGroupIds=security_group_ids_  #security_group_ids
+    )
+    return instances
+
+
+### S3 stuff
+
+
+def get_bucket_names(s3):
+    """get a list of available bucket names
+
+    Args:
+        s3 ([]): boto s3.client
+
+    Returns:
+        [list]: list of strings
+    """
+    return [bucket.name for bucket in s3.buckets.all()]
+
+
+def write_file_to_bucket(s3, bucket_name, remote_filepath, local_filepath):
+    """write a file to a bucket"""
+    s3.Object(bucket_name,
+              remote_filepath).put(Body=open(local_filepath, 'rb'))
+
+
+## Security Group stuff
 def get_instances_with_keypair(ec2, keypair_name):
     return filtered_ec2s(ec2,
                          lambda instance: instance.key_name == keypair_name)
@@ -100,49 +173,3 @@ def create_security_group(ec2, vpc_id, group_name="allow-inbound-ssh"):
         IpProtocol='tcp',
     )
     return security_group
-
-
-def create_instances(
-    *,
-    ec2,
-    image_id,
-    minCount=1,
-    maxCount=1,
-    keypair_name="",
-    instance_type,
-    security_group_ids=None,
-):
-    image_id = image_id or DEFAULT_AMI
-    security_group_ids_ = security_group_ids or []
-    instance_type = instance_type or "t2.micro"
-    print(f"{image_id} {instance_type} {security_group_ids_}")
-    instances = ec2.create_instances(
-        ImageId=image_id,
-        MinCount=minCount,
-        MaxCount=maxCount,
-        InstanceType=instance_type,
-        KeyName=keypair_name,
-        SecurityGroupIds=security_group_ids_  #security_group_ids
-    )
-    return instances
-
-
-def terminate_instance(instance):
-    try:
-        instance.stop()
-        instance.terminate()
-        print(f"terminated {instance.id}")
-    except Exception as e:
-        print(f"skipping instance {instance.id} - {instance.state['Name']}")
-        # print(e)
-
-
-def terminate_all_instances(ec2, keypair_name=None):
-    if keypair_name is None:
-        instances = get_ec2_instances(ec2)
-    else:
-        instances = get_instances_with_keypair(ec2, keypair_name)
-    for instance in instances:
-        if instance.state['Name'] == 'terminated':
-            continue
-        terminate_instance(instance)
