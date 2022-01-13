@@ -64,8 +64,6 @@ def run_command_on_instance(*,
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(hostname, username=username, key_filename=key_filepath)
         for cmd in command_strings:
-            if verbose:
-                print(cmd)
             return_strings += run_command_helper(client, cmd, verbose=verbose)
     return return_strings
 

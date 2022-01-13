@@ -1,6 +1,6 @@
 import sys
 import boto3
-from botocore.exceptions import ClientError
+import botocore
 
 AWS_REGION = "us-east-1"
 #DEFAULT_AMI = "ami-08e4e35cccc6189f4" - FEDORA
@@ -107,6 +107,29 @@ def create_instances(
 ### S3 stuff
 
 
+def get_bucket(s3, bucket_name):
+    """get bucket
+
+    Args:
+        s3 ([type]): [description]
+        bucket_name ([type]): [description]
+
+    Returns:
+        (s3.bucket, bool): bucket, if-it-exists
+    """
+    bucket = s3.Bucket(bucket_name)
+    exists = True
+    try:
+        s3.meta.client.head_bucket(Bucket='mybucket')
+    except botocore.exceptions.ClientError as e:
+        # If a client error is thrown, then check that it was a 404 error.
+        # If it was a 404 error, then the bucket does not exist.
+        error_code = e.response['Error']['Code']
+        if error_code == '404':
+            exists = False
+    return bucket, exists
+
+
 def get_bucket_names(s3):
     """get a list of available bucket names
 
@@ -123,6 +146,19 @@ def write_file_to_bucket(s3, bucket_name, remote_filepath, local_filepath):
     """write a file to a bucket"""
     s3.Object(bucket_name,
               remote_filepath).put(Body=open(local_filepath, 'rb'))
+
+
+def download_file_from_bucket(s3, bucket_name, remote_filepath,
+                              local_filepath):
+    """download a file from a bucket"""
+
+    try:
+        s3.Bucket(bucket_name).download_file(remote_filepath, local_filepath)
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            print("The object does not exist.")
+        else:
+            raise
 
 
 ## Security Group stuff

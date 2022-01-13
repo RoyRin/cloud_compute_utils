@@ -24,8 +24,10 @@ sudo apt update
 sudo apt install -y python3-pip
 
 cd $HOME
+rm -rf {github_dir} 
 git clone {github}
-pip install {github_dir}
+cd {github_dir}
+pip install .
     '''
 
 
@@ -50,6 +52,8 @@ def _get_instance_dns_name():
     username = "ubuntu"
     return hostname, username
 
+
+# TODO(Roy) on 2022-01-13: catch execute command to see what error code it returns
 
 if __name__ == '__main__':
     hostname, username = _get_instance_dns_name()
