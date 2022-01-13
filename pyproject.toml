@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "cloud_compute_utils"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 
 authors = ["Roy Rinberg <royrinberg@gmail.com>"]
 
 [tool.poetry.scripts]
-deployments-cli = "cloud_compute_utils.deploy_cli:main"
+cloud-cli = "cloud_compute_utils.cloud_cli:main"
 
 [tool.poetry.dependencies]
 python = ">=3.7.5 <4"

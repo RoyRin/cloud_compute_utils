@@ -28,15 +28,15 @@ echo `/home/ubuntu/.local/bin/deployments-cli` > deployments-cli.txt
 
 
 def get_install_cmd_str():
-    return '''
+    return f'''
 #!/bin/bash
 set -x
 sudo apt update
 sudo apt install -y python3-pip
 
 cd $HOME
-git clone https://github.com/RoyRin/cloud_compute_utils
-pip install cloud_compute_utils
+git clone {github}
+pip install {github_dir}
     '''
 
 
