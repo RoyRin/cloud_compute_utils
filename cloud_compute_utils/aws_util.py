@@ -93,6 +93,7 @@ def create_instances(
     security_group_ids_ = security_group_ids or []
     instance_type = instance_type or "t2.micro"
     print(f"{image_id} {instance_type} {security_group_ids_}")
+
     instances = ec2.create_instances(
         ImageId=image_id,
         MinCount=minCount,
