@@ -1,5 +1,5 @@
 from typing_extensions import Required
-from deployments import aws_util
+from cloud_compute_utils import aws_util
 import click
 import logging
 import os
@@ -21,28 +21,31 @@ def cli(ctx):
     return
 
 
+# TODO(Roy) on 2022-01-12: figure out sizing for instances
+
+
 @cli.command(name="spin-up-ec2", help=""" Spin up EC2 instance(s) """)
 @click.option("--N", '-N', default=1, help='number of instances')
 @click.option('--keypair-name', "-k", default="", help='name of keypair')
-@click.option('--image-id',
-              "-i",
-              default="ami-08e4e35cccc6189f4",
-              help='image id')
+@click.option('--image-id', "-i", help='image id')
+@click.option('--instance-type', "-t", help='instance_type')
 @click.option('--security-group-ids',
               "-s",
               multiple=True,
               required=True,
               help='security group id (multiple allowed, `-s ## -s ##` )')
 @click.pass_context
-def spin_up_ec2(ctx, n, keypair_name, image_id, security_group_ids):
+def spin_up_ec2(ctx, n, keypair_name, image_id, instance_type,
+                security_group_ids):
     ec2 = aws_util.get_ec2_client()
     security_group_ids = list(security_group_ids)
     instances = aws_util.create_instances(
-        ec2,
+        ec2=ec2,
         image_id=image_id,
         minCount=n,
         maxCount=n,
         keypair_name=keypair_name,
+        instance_type=instance_type,
         security_group_ids=security_group_ids)
     for instance in instances:
         aws_util.print_instance(instance)
@@ -99,14 +102,23 @@ def list_ec2(ctx, keypair_name):
     default=None,
     help='name of keypair (if not provided, this will spin down all instances)'
 )
+@click.option('--instance-ids', "-i", multiple=True, help='name of instances')
 @click.pass_context
-def spin_down_ec2(ctx, keypair_name):
+def spin_down_ec2(ctx, keypair_name, instance_ids):
     ec2 = aws_util.get_ec2_client()
     # get instances
     if keypair_name is None:
-        instances = aws_util.get_ec2_instances(ec2)
+        running_instances = aws_util.get_ec2_instances(ec2)
     else:
-        instances = aws_util.get_instances_with_keypair(ec2, keypair_name)
+        running_instances = aws_util.get_instances_with_keypair(
+            ec2, keypair_name)
+    if len(instance_ids) != 0:
+        instances = [
+            instance for instance in running_instances
+            if instance.id in instance_ids
+        ]
+    else:
+        instances = running_instances
     # terminate instances
     for instance in instances:
         if instance.state['Name'] == 'terminated':

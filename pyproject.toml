@@ -15,6 +15,7 @@ ipykernel = "^6.6.0"
 PyYAML = "^6.0"
 click = "^8.0.3"
 boto3 = "1.20.32"
+paramiko = "^2.9.2"
 
 [tool.poetry.dev-dependencies]
 bpython = "^0.21"

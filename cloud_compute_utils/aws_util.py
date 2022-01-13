@@ -3,6 +3,8 @@ import boto3
 from botocore.exceptions import ClientError
 
 AWS_REGION = "us-east-1"
+#DEFAULT_AMI = "ami-08e4e35cccc6189f4" - FEDORA
+DEFAULT_AMI = "ami-04505e74c0741db8d"  # ubuntu
 
 
 def print_instance(instance):
@@ -34,7 +36,7 @@ def get_ec2_instances(ec2):
     return instances
 
 
-def filter_ec2s(ec2, filter_function):
+def filtered_ec2s(ec2, filter_function):
 
     instances = get_ec2_instances(ec2)
     filtered_instances = [
@@ -48,11 +50,12 @@ def is_running(instance):
 
 
 def get_running_instances(ec2):
-    return filter_ec2s(ec2, is_running)
+    return filtered_ec2s(ec2, is_running)
 
 
 def get_instances_with_keypair(ec2, keypair_name):
-    return filter_ec2s(ec2, lambda instance: instance.key_name == keypair_name)
+    return filtered_ec2s(ec2,
+                         lambda instance: instance.key_name == keypair_name)
 
 
 def print_security_group(security_group):
@@ -100,19 +103,24 @@ def create_security_group(ec2, vpc_id, group_name="allow-inbound-ssh"):
 
 
 def create_instances(
+    *,
     ec2,
-    image_id="ami-08e4e35cccc6189f4",
+    image_id,
     minCount=1,
     maxCount=1,
     keypair_name="",
+    instance_type,
     security_group_ids=None,
 ):
+    image_id = image_id or DEFAULT_AMI
     security_group_ids_ = security_group_ids or []
+    instance_type = instance_type or "t2.micro"
+    print(f"{image_id} {instance_type} {security_group_ids_}")
     instances = ec2.create_instances(
         ImageId=image_id,
         MinCount=minCount,
         MaxCount=maxCount,
-        InstanceType='t2.micro',
+        InstanceType=instance_type,
         KeyName=keypair_name,
         SecurityGroupIds=security_group_ids_  #security_group_ids
     )

@@ -1,0 +1,49 @@
+import paramiko
+
+
+def copy_files_to_instance(*, local_to_remote_filenames, hostname, username,
+                           key_filepath):
+    """
+    Copies files to instance
+    Args:
+        local_to_remote_filenames ([dict]): maps local filenames to remote filenames
+        hostname ([type]): [description]
+        username ([type]): [description]
+        key_filepath ([type], optional): [description]. Defaults to key_filepath.
+
+    Returns:
+        [type]: [description]
+    """
+
+    # Connect to remote host
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(hostname, username=username, key_filename=key_filepath)
+
+        # Setup sftp connection and transmit this script
+        with client.open_sftp() as sftp:
+            for local_filename, remote_filename in local_to_remote_filenames.items(
+            ):
+                sftp.put(local_filename, remote_filename)
+
+    client.close()
+
+
+def run_command_on_instance(*, command_str, hostname, username, key_filepath):
+    """ runs a command on an instance """
+    return_strings = []
+    # Connect to remote host
+    with paramiko.SSHClient() as client:
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(hostname, username=username, key_filename=key_filepath)
+
+        stdin, stdout, stderr = client.exec_command(command_str)
+
+        if len(list(stderr)) != 0:
+            print("Error!")
+            for line in stderr:
+                print(line)
+        for line in stdout:
+            print(f"{line}")
+            return_strings.append(line)
+    return return_strings
