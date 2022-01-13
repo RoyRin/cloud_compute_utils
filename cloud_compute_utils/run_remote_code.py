@@ -29,21 +29,38 @@ def copy_files_to_instance(*, local_to_remote_filenames, hostname, username,
     client.close()
 
 
-def run_command_on_instance(*, command_str, hostname, username, key_filepath):
+def run_command_helper(client, cmd, verbose=False):
+    return_strings = []
+    stdin, stdout, stderr = client.exec_command(cmd)
+
+    if len(list(stderr)) != 0:
+        print("Error!")
+        print(stderr.readlines())
+        for line in stderr:
+            print(line)
+
+    for line in stdout:
+        if verbose:
+            print(f"{line}")
+        return_strings.append(line)
+
+    return return_strings
+
+
+def run_command_on_instance(*,
+                            command_strings,
+                            hostname,
+                            username,
+                            key_filepath,
+                            verbose=False):
     """ runs a command on an instance """
     return_strings = []
     # Connect to remote host
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(hostname, username=username, key_filename=key_filepath)
-
-        stdin, stdout, stderr = client.exec_command(command_str)
-
-        if len(list(stderr)) != 0:
-            print("Error!")
-            for line in stderr:
-                print(line)
-        for line in stdout:
-            print(f"{line}")
-            return_strings.append(line)
+        for cmd in command_strings:
+            if verbose:
+                print(cmd)
+            return_strings += run_command_helper(client, cmd, verbose=verbose)
     return return_strings

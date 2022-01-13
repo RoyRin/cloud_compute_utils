@@ -72,14 +72,42 @@ if __name__ == '__main__':
     aws_util.print_instance(running_instances[0])
 
     install_cmds = [
-        "sudo apt update", "sudo apt install -y python3-pip",
-        "curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -",
-        f"git install {github}", f"cd {github_dir}", "poetry shell",
-        "poetry install", "deployment-cli --help"
+        #"sudo apt update", "sudo apt install -y python3-pip",
+        #"curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -",
+        "pwd",
+        f"git clone {github}",
+        f"cd {github_dir}",
+        "ls",
+        f"poetry shell",
+        "poetry install",
+        f"deployment-cli --help"
     ]
-    for cmd in install_cmds:
-        print(cmd, "!!!!!!!!!!!!!!!")
-        run_remote_code.run_command_on_instance(command_str=cmd,
-                                                hostname=hostname,
-                                                username=username,
-                                                key_filepath=key_filepath)
+    local_to_remote_filenames = {
+        "/home/roy/code/research/cloud_compute_utils/cloud_compute_utils/scripts/install_cmd.sh":
+        "/tmp/install.sh",
+        "/home/roy/code/research/cloud_compute_utils/cloud_compute_utils/scripts/run.sh":
+        "/tmp/run.sh"
+    }
+
+    command_str_install = "bash /tmp/install_cmd.sh"
+    command_str_run = "bash /tmp/run.sh"
+    run_remote_code.copy_files_to_instance(
+        local_to_remote_filenames=local_to_remote_filenames,
+        hostname=hostname,
+        username=username,
+        key_filepath=key_filepath)
+
+    run_remote_code.run_command_on_instance(
+        command_strings=[command_str_install, command_str_run],
+        hostname=hostname,
+        username=username,
+        key_filepath=key_filepath,
+        verbose=True)
+    """command_str
+    run_remote_code.run_command_on_instance(command_strings=install_cmds,
+                                            hostname=hostname,
+                                            username=username,
+                                            key_filepath=key_filepath,
+                                            verbose=True)
+
+    """
