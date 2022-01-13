@@ -1,6 +1,10 @@
 import paramiko
 
 
+def copy_cmd_to_file(cmd, filename):
+    return f"echo \'{cmd}\' > {filename}"
+
+
 def copy_files_to_instance(*, local_to_remote_filenames, hostname, username,
                            key_filepath):
     """
@@ -64,3 +68,20 @@ def run_command_on_instance(*,
                 print(cmd)
             return_strings += run_command_helper(client, cmd, verbose=verbose)
     return return_strings
+
+
+def _run_this_file_on_instance(hostname, username, key_filepath):
+    """
+    Run this file specific file on an instance.
+        (Somewhat of a niche thing to do.)
+    """
+    local_to_remote_filenames = {__file__: "/tmp/myscript.py"}
+    command_str = "python3 /tmp/myscript.py"
+    copy_files_to_instance(local_to_remote_filenames=local_to_remote_filenames,
+                           hostname=hostname,
+                           username=username,
+                           key_filepath=key_filepath)
+    run_command_on_instance(command_str=command_str,
+                            hostname=hostname,
+                            username=username,
+                            key_filepath=key_filepath)
