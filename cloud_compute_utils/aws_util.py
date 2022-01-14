@@ -24,8 +24,7 @@ def get_s3_client(region=AWS_REGION):
 ## EC2 stuff
 def print_instance(instance):
     print(
-        f"{instance.id} : {instance.state['Name']} - {instance.public_dns_name}"
-    )
+        f"{instance.id}, {instance.public_dns_name}: {instance.state['Name']}")
 
 
 def get_ec2_instances(ec2):
