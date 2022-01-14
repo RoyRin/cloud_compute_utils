@@ -26,7 +26,7 @@ def cli(ctx):
 
 
 @cli.command(name="spin-up-ec2", help=""" Spin up EC2 instance(s) """)
-@click.option("--N", '-N', default=1, help='number of instances')
+@click.option("--instance-number", '-N', default=1, help='number of instances')
 @click.option('--keypair-name', "-k", default="", help='name of keypair')
 @click.option('--image-id', "-i", help='image id')
 @click.option('--instance-type', "-t", help='instance_type')
@@ -36,15 +36,15 @@ def cli(ctx):
               required=True,
               help='security group id (multiple allowed, `-s ## -s ##` )')
 @click.pass_context
-def spin_up_ec2(ctx, n, keypair_name, image_id, instance_type,
+def spin_up_ec2(ctx, instance_number, keypair_name, image_id, instance_type,
                 security_group_ids):
     ec2 = aws_util.get_ec2_client()
     security_group_ids = list(security_group_ids)
     instances = aws_util.create_instances(
         ec2=ec2,
         image_id=image_id,
-        minCount=n,
-        maxCount=n,
+        minCount=instance_number,
+        maxCount=instance_number,
         keypair_name=keypair_name,
         instance_type=instance_type,
         security_group_ids=security_group_ids)

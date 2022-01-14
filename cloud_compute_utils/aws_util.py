@@ -143,7 +143,7 @@ def get_bucket_names(s3):
     return [bucket.name for bucket in s3.buckets.all()]
 
 
-def write_file_to_bucket(s3, bucket_name, remote_filepath, local_filepath):
+def write_file_to_bucket(*, s3, bucket_name, remote_filepath, local_filepath):
     """write a file to a bucket"""
     s3.Object(bucket_name,
               remote_filepath).put(Body=open(local_filepath, 'rb'))
