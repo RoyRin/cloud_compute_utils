@@ -21,8 +21,8 @@ def cli(ctx):
     return
 
 
-# TODO(Roy) on 2022-01-12: figure out sizing for instances
-# TODO(Roy) on 2022-01-13: have the create-ec2s or list-ec2s possibly write to a file
+# TODO(Roy) on 2022-01-12: figure out sizing for instances - beep boop baap
+# TODO(Roy) on 2022-01-13: have the create-ec2s or list-ec2s possibly write to a file - beep boop baap
 
 
 @cli.command(name="spin-up-ec2", help=""" Spin up EC2 instance(s) """)
