@@ -1,5 +1,31 @@
 import paramiko
 
+GITHUB = "https://github.com/RoyRin/cloud_compute_utils"
+
+
+def get_install_cmd_str(github=GITHUB):
+    """Get the command string to install cloud_compute_utils
+
+    Args:
+        github ([type], optional): github url. Defaults to https://github.com/RoyRin/cloud_compute_utils.
+
+    Returns:
+        [type]: [description]
+    """
+    github_dir = github.split("/")[-1]
+    return f'''
+#!/bin/bash
+set -x
+sudo apt update
+sudo apt install -y python3-pip
+
+cd $HOME
+rm -rf {github_dir} 
+git clone {github}
+cd {github_dir}
+pip install .
+    '''
+
 
 def copy_cmd_to_file(cmd, filename):
     return f"echo \'{cmd}\' > {filename}"
