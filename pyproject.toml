@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cloud_compute_utils"
-version = "0.2.2"
+version = "0.2.4"
 description = ""
 
 authors = ["Roy Rinberg <royrinberg@gmail.com>"]

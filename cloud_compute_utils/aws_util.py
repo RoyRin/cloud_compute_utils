@@ -22,9 +22,14 @@ def get_s3_client(region=AWS_REGION):
 
 
 ## EC2 stuff
+def get_attached_volumes(instance):
+    return [vol for vol in instance.volumes.all()]
+
+
 def print_instance(instance):
+    total_size = sum(vol.size for vol in get_attached_volumes(instance))
     print(
-        f"{instance.id}, {instance.public_dns_name} : {instance.state['Name']}"
+        f"{instance.id}, {instance.public_dns_name} : {instance.state['Name']} ({total_size} GB)"
     )
 
 
@@ -79,20 +84,20 @@ def terminate_all_instances(ec2, keypair_name=None):
         terminate_instance(instance)
 
 
-def create_instances(
-    *,
-    ec2,
-    image_id,
-    minCount=1,
-    maxCount=1,
-    keypair_name="",
-    instance_type,
-    security_group_ids=None,
-):
+def create_instances(*,
+                     ec2,
+                     image_id,
+                     minCount=1,
+                     maxCount=1,
+                     keypair_name="",
+                     instance_type,
+                     security_group_ids=None,
+                     size=10,
+                     device_name="/dev/sda1"):
     image_id = image_id or DEFAULT_AMI
     security_group_ids_ = security_group_ids or []
     instance_type = instance_type or "t2.micro"
-    print(f"{image_id} {instance_type} {security_group_ids_}")
+    print(f"{image_id} {instance_type} {security_group_ids_} - size : {size}")
 
     instances = ec2.create_instances(
         ImageId=image_id,
@@ -100,8 +105,14 @@ def create_instances(
         MaxCount=maxCount,
         InstanceType=instance_type,
         KeyName=keypair_name,
-        SecurityGroupIds=security_group_ids_  #security_group_ids
-    )
+        SecurityGroupIds=security_group_ids_,  #security_group_ids
+        BlockDeviceMappings=[{
+            'DeviceName': device_name,
+            'Ebs': {
+                'VolumeSize': size,
+                'VolumeType': 'standard'
+            }
+        }])
     return instances
 
 
