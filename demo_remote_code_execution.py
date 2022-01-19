@@ -65,7 +65,7 @@ if __name__ == '__main__':
     install_cmd_str = "bash /tmp/install_cmd.sh"
     run_cmd_str = "bash /tmp/run_cmd.sh"
 
-    run_remote_code.run_command_on_instance(
+    run_remote_code.run_bash_on_instance(
         command_strings=[cmd1, cmd2, install_cmd_str, run_cmd_str],
         hostname=hostname,
         username=username,

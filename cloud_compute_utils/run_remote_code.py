@@ -77,12 +77,12 @@ def run_command_helper(client, cmd, verbose=False):
     return return_strings
 
 
-def run_command_on_instance(*,
-                            command_strings,
-                            hostname,
-                            username,
-                            key_filepath,
-                            verbose=False):
+def run_bash_on_instance(*,
+                         command_strings,
+                         hostname,
+                         username,
+                         key_filepath,
+                         verbose=False):
     """ runs a command on an instance """
     return_strings = []
     # Connect to remote host
@@ -105,7 +105,7 @@ def _run_this_file_on_instance(hostname, username, key_filepath):
                            hostname=hostname,
                            username=username,
                            key_filepath=key_filepath)
-    run_command_on_instance(command_str=command_str,
-                            hostname=hostname,
-                            username=username,
-                            key_filepath=key_filepath)
+    run_bash_on_instance(command_str=command_str,
+                         hostname=hostname,
+                         username=username,
+                         key_filepath=key_filepath)
