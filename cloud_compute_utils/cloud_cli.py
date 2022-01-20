@@ -21,10 +21,6 @@ def cli(ctx):
     return
 
 
-# TODO(Roy) on 2022-01-12: figure out sizing for instances - beep boop baap
-# TODO(Roy) on 2022-01-13: have the create-ec2s or list-ec2s possibly write to a file - beep boop baap
-
-
 @cli.command(name="spin-up-ec2", help=""" Spin up EC2 instance(s) """)
 @click.option("--instance-number", '-N', default=1, help='number of instances')
 @click.option('--keypair-name', "-k", default="", help='name of keypair')
@@ -103,30 +99,37 @@ def list_ec2(ctx, keypair_name):
     '--keypair-name',
     "-k",
     default=None,
-    help='name of keypair (if not provided, this will spin down all instances)'
+    help=
+    'name of keypair instance created with (will spin down all keypair names if not specified)'
 )
-@click.option('--instance-ids', "-i", multiple=True, help='name of instances')
+@click.option(
+    '--instance-ids',
+    "-i",
+    multiple=True,
+    help='name of instances (if not provided, this will spin down all instances)'
+)
 @click.pass_context
 def spin_down_ec2(ctx, keypair_name, instance_ids):
     ec2 = aws_util.get_ec2_client()
     # get instances
     if keypair_name is None:
-        running_instances = aws_util.get_ec2_instances(ec2)
+        running_instances = aws_util.get_running_instances(ec2)
     else:
         running_instances = aws_util.get_instances_with_keypair(
             ec2, keypair_name)
     if len(instance_ids) != 0:
-        instances = [
+        running_instances = [
             instance for instance in running_instances
             if instance.id in instance_ids
         ]
-    else:
-        instances = running_instances
+
     # terminate instances
-    for instance in instances:
+    for instance in running_instances:
         if instance.state['Name'] == 'terminated':
             continue
         aws_util.terminate_instance(instance)
+        print("terminating:")
+        aws_util.print_instance(instance)
 
 
 def main():
