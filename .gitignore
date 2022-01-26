@@ -1,7 +1,10 @@
 
-.vscode
+dist/
+gcp
 .venv
 data/
 secrets/
 assets/
 **/__pycache__
+miscellaneous/
+ssh_scripts/

@@ -26,11 +26,15 @@ def get_attached_volumes(instance):
     return [vol for vol in instance.volumes.all()]
 
 
-def print_instance(instance):
+def instance_str(instance):
     total_size = sum(vol.size for vol in get_attached_volumes(instance))
-    print(
+    return (
         f"{instance.id}, {instance.public_dns_name} : {instance.state['Name']} ({total_size} GB)"
     )
+
+
+def print_instance(instance):
+    print(instance_str(instance))
 
 
 def get_ec2_instances(ec2):
@@ -63,25 +67,48 @@ def get_running_instances(ec2):
     return filtered_ec2s(ec2, is_running)
 
 
-def terminate_instance(instance):
+def terminate_instance(instance, verbose=False):
     try:
         instance.stop()
         instance.terminate()
-        print(f"terminated {instance.id}")
+        if verbose:
+            print(f"terminated {instance.id}")
     except Exception as e:
         print(f"skipping instance {instance.id} - {instance.state['Name']}")
         # print(e)
 
 
-def terminate_all_instances(ec2, keypair_name=None):
-    if keypair_name is None:
-        instances = get_ec2_instances(ec2)
-    else:
-        instances = get_instances_with_keypair(ec2, keypair_name)
+def terminate_all_instances_with_keypair(ec2,
+                                         keypair_name,
+                                         instance_ids=None,
+                                         dry_run=True,
+                                         verbose=False):
+    """[summary]
+
+    Args:
+        ec2 ([type]): [description]
+        keypair_name ([type]): [description]
+        instance_ids ([list], optional): [list of instance ids]. Defaults to None
+        verbose=False.
+    """
+    if dry_run:
+        print("dry run")
+    instances = get_instances_with_keypair(ec2, keypair_name)
+    if instance_ids is not None:
+        # if instance_ids provided, only include those
+        instances = [
+            instance for instance in instances if instance.id in instance_ids
+        ]
     for instance in instances:
+
         if instance.state['Name'] == 'terminated':
             continue
-        terminate_instance(instance)
+        if dry_run:
+            print(f"would terminate {instance.id} - {instance_str(instance)}")
+            continue
+        terminate_instance(instance, verbose=verbose)
+        if verbose:
+            print_instance(instance)
 
 
 def create_instances(*,

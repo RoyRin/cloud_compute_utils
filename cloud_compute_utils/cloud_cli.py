@@ -13,6 +13,7 @@ stream_handler.setFormatter(
 
 logging.basicConfig(level=logging.INFO, handlers=[stream_handler])
 logger = logging.getLogger()
+AWS_REGION = "us-east-1"
 
 
 @click.group(help=""" """)
@@ -32,10 +33,15 @@ def cli(ctx):
               required=True,
               help='security group id (multiple allowed, `-s ## -s ##` )')
 @click.option('--size', "-s", default=10, help='size of instance')
+@click.option('--region',
+              "-r",
+              default=AWS_REGION,
+              show_default=True,
+              help='AWS region')
 @click.pass_context
 def spin_up_ec2(ctx, instance_number, keypair_name, image_id, instance_type,
-                security_group_ids, size):
-    ec2 = aws_util.get_ec2_client()
+                security_group_ids, size, region):
+    ec2 = aws_util.get_ec2_client(region=region)
     security_group_ids = list(security_group_ids)
     instances = aws_util.create_instances(
         ec2=ec2,
@@ -55,9 +61,14 @@ def spin_up_ec2(ctx, instance_number, keypair_name, image_id, instance_type,
     help="""Create a security group that can be accessed from anywhere""")
 @click.option('--vpc-id', "-v", required=True, help='name of keypair')
 @click.option('--group-name', "-g", help='name of security group name')
+@click.option('--region',
+              "-r",
+              default=AWS_REGION,
+              show_default=True,
+              help='AWS region')
 @click.pass_context
-def create_ec2_security_group(ctx, vpc_id, group_name):
-    ec2 = aws_util.get_ec2_client()
+def create_ec2_security_group(ctx, vpc_id, group_name, region):
+    ec2 = aws_util.get_ec2_client(region=region)
     security_group = aws_util.create_security_group(ec2=ec2,
                                                     vpc_id=vpc_id,
                                                     group_name=group_name)
@@ -66,9 +77,14 @@ def create_ec2_security_group(ctx, vpc_id, group_name):
 
 @cli.command(name="list-security-groups",
              help=""" Lists all security groups""")
+@click.option('--region',
+              "-r",
+              default=AWS_REGION,
+              show_default=True,
+              help='AWS region')
 @click.pass_context
-def list_security_groups(ctx):
-    ec2 = aws_util.get_ec2_client()
+def list_security_groups(ctx, region):
+    ec2 = aws_util.get_ec2_client(region=region)
     for sg in aws_util.get_security_groups(ec2):
         aws_util.print_security_group(sg)
 
@@ -79,9 +95,14 @@ def list_security_groups(ctx):
     """ Lists all non-terminated instances (optionally: associated with a specific keypair)"""
 )
 @click.option('--keypair-name', "-k", default=None, help='name of keypair')
+@click.option('--region',
+              "-r",
+              default=AWS_REGION,
+              show_default=True,
+              help='AWS region')
 @click.pass_context
-def list_ec2(ctx, keypair_name):
-    ec2 = aws_util.get_ec2_client()
+def list_ec2(ctx, keypair_name, region):
+    ec2 = aws_util.get_ec2_client(region=region)
     if keypair_name is not None:
         instances = aws_util.get_instances_with_keypair(ec2, keypair_name)
     else:
@@ -98,7 +119,7 @@ def list_ec2(ctx, keypair_name):
 @click.option(
     '--keypair-name',
     "-k",
-    default=None,
+    required=True,
     help=
     'name of keypair instance created with (will spin down all keypair names if not specified)'
 )
@@ -108,28 +129,21 @@ def list_ec2(ctx, keypair_name):
     multiple=True,
     help='name of instances (if not provided, this will spin down all instances)'
 )
+@click.option('--region',
+              "-r",
+              default=AWS_REGION,
+              show_default=True,
+              help='AWS region')
+@click.option("--dry-run", "-d", is_flag=True, help="dry run")
 @click.pass_context
-def spin_down_ec2(ctx, keypair_name, instance_ids):
-    ec2 = aws_util.get_ec2_client()
+def spin_down_ec2(ctx, keypair_name, instance_ids, region, dry_run):
+    ec2 = aws_util.get_ec2_client(region=region)
     # get instances
-    if keypair_name is None:
-        running_instances = aws_util.get_running_instances(ec2)
-    else:
-        running_instances = aws_util.get_instances_with_keypair(
-            ec2, keypair_name)
-    if len(instance_ids) != 0:
-        running_instances = [
-            instance for instance in running_instances
-            if instance.id in instance_ids
-        ]
-
-    # terminate instances
-    for instance in running_instances:
-        if instance.state['Name'] == 'terminated':
-            continue
-        aws_util.terminate_instance(instance)
-        print("terminating:")
-        aws_util.print_instance(instance)
+    aws_util.terminate_all_instances_with_keypair(ec2,
+                                                  keypair_name,
+                                                  instance_ids=instance_ids,
+                                                  dry_run=dry_run,
+                                                  verbose=True)
 
 
 def main():

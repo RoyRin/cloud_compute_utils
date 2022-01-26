@@ -1,4 +1,9 @@
 # Changelog
+
+## 0.2.5
+- prevent the ability to terminate all instances
+- misc bug improvements
+
 ## 0.2.0
 - Initial commit for cloud util that allow:
   - spin up/spin-down EC2 instances
