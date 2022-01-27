@@ -15,12 +15,13 @@ def get_wheels(wheel_dir):
     ]
 
 
-def install_remotely_whl(*,
-                         hostname,
-                         key_filepath,
-                         wheel_dir=Path(__file__).parent.parent / "dist",
-                         username="ubuntu",
-                         verbose=True):
+def install_remotely_whl_using_cmd(*,
+                                   hostname,
+                                   key_filepath,
+                                   wheel_dir=Path(__file__).parent.parent /
+                                   "dist",
+                                   username="ubuntu",
+                                   verbose=True):
     """
     install the code on the remote instances, using wheels
         Note: wheel needs to exist in the wheel_dir
@@ -47,6 +48,44 @@ sudo apt update && sudo apt install python3-pip -y
 python3 -m pip install {" ".join(remote_wheel_paths)} """
     if verbose:
         print(bash_cmd)
+    run_bash_on_instance(command_strings=[bash_cmd],
+                         hostname=hostname,
+                         username=username,
+                         key_filepath=key_filepath)
+
+
+def install_remotely_whl(*,
+                         hostname,
+                         key_filepath,
+                         wheel_dir=Path(__file__).parent.parent / "dist",
+                         install_script=Path(__file__).parent / "scripts" /
+                         "install.sh",
+                         username="ubuntu",
+                         remote_base="/home/ubuntu/",
+                         verbose=True):
+    """
+    install the code on the remote instances, using wheels
+        Note: wheel needs to exist in the wheel_dir
+    
+    """
+    wheels = get_wheels(wheel_dir)
+    if len(wheels) == 0:
+        raise ValueError(f"No wheels found in {wheel_dir}")
+
+    local_to_remote_filenames = {
+        wheel_path: os.path.join(remote_base, os.path.basename(wheel_path))
+        for wheel_path in wheels
+    }
+    local_to_remote_filenames[install_script] = os.path.join(
+        remote_base, "install.sh")
+
+    copy_files_to_instance(local_to_remote_filenames=local_to_remote_filenames,
+                           hostname=hostname,
+                           username=username,
+                           key_filepath=key_filepath)
+
+    bash_cmd = f""" bash {remote_base}/install.sh """
+
     run_bash_on_instance(command_strings=[bash_cmd],
                          hostname=hostname,
                          username=username,
