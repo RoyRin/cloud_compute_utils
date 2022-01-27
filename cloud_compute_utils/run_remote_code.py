@@ -30,22 +30,21 @@ def install_remotely_whl(*,
     if len(wheels) == 0:
         raise ValueError(f"No wheels found in {wheel_dir}")
 
-    wheel_path = sorted(wheels)[-1]
-
-    remote_wheel_path = os.path.join("/home/ubuntu/",
-                                     os.path.basename(wheel_path))
-    local_to_remote_filenames = {wheel_path: remote_wheel_path}
+    local_to_remote_filenames = {
+        wheel_path: os.path.join("/home/ubuntu/", os.path.basename(wheel_path))
+        for wheel_path in wheels
+    }
 
     copy_files_to_instance(local_to_remote_filenames=local_to_remote_filenames,
                            hostname=hostname,
                            username=username,
                            key_filepath=key_filepath)
-
+    remote_wheel_paths = local_to_remote_filenames.values()
     bash_cmd = f"""
 #!/bin/bash
 set -x
 sudo apt update && sudo apt install python3-pip -y
-python3 -m pip install {remote_wheel_path} """
+python3 -m pip install {" ".join(remote_wheel_paths)} """
     if verbose:
         print(bash_cmd)
     run_bash_on_instance(command_strings=[bash_cmd],
