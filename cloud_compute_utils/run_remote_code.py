@@ -81,7 +81,8 @@ def install_remotely_whl(*,
         remote_base, "install.sh")
 
     # remove the existing wheel files if they exists
-
+    if verbose:
+        print("Removing existing wheels")
     rm_cmd = f""" rm {os.path.join(remote_base, '*whl')} """
     results = run_bash_on_instance(command_strings=[rm_cmd],
                                    hostname=hostname,
@@ -89,6 +90,8 @@ def install_remotely_whl(*,
                                    key_filepath=key_filepath,
                                    verbose=True)
 
+    if verbose:
+        print("Copying files to remote instance")
     copy_files_to_instance(local_to_remote_filenames=local_to_remote_filenames,
                            hostname=hostname,
                            username=username,
@@ -96,6 +99,8 @@ def install_remotely_whl(*,
 
     bash_cmd = f""" bash {remote_base}/install.sh """
 
+    if verbose:
+        print("running install script")
     results = run_bash_on_instance(command_strings=[bash_cmd],
                                    hostname=hostname,
                                    username=username,
@@ -139,16 +144,16 @@ def copy_files_to_instance(*,
     client.close()
 
 
-def run_command_helper(client, cmd, verbose=False):
+def run_command_helper(client, cmd, blocking=True, verbose=False):
     results = {"stdout": [], "stderr": []}
     stdin, stdout, stderr = client.exec_command(cmd)
-    exit_status = stdout.channel.recv_exit_status()  # Blocking call
-
-    if verbose:
-        if exit_status == 0:
-            print("Command successful")
-        else:
-            print("Error", exit_status)
+    if blocking:
+        exit_status = stdout.channel.recv_exit_status()  # Blocking call
+        if verbose:
+            if exit_status == 0:
+                print("Command successful")
+            else:
+                print("Error", exit_status)
 
     stderr = stderr.readlines()
 
@@ -175,6 +180,7 @@ def run_bash_on_instance(*,
                          hostname,
                          username,
                          key_filepath,
+                         blocking=True,
                          verbose=True):
     """ runs a command on an instance """
     return_strings = {}
@@ -183,7 +189,10 @@ def run_bash_on_instance(*,
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(hostname, username=username, key_filename=key_filepath)
         for cmd in command_strings:
-            res = run_command_helper(client, cmd, verbose=verbose)
+            res = run_command_helper(client,
+                                     cmd,
+                                     blocking=blocking,
+                                     verbose=verbose)
 
             for k, v in res.items():
                 if return_strings.get(k) is None:

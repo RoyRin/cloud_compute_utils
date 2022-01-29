@@ -1,6 +1,7 @@
 import sys
 import boto3
 import botocore
+import os
 
 AWS_REGION = "us-east-1"
 #DEFAULT_AMI = "ami-08e4e35cccc6189f4" - FEDORA
@@ -17,8 +18,12 @@ def get_ec2_client(region=AWS_REGION):
     return ec2
 
 
-def get_s3_client(region=AWS_REGION):
+def get_s3_resource(region=AWS_REGION):
     return boto3.resource('s3', region_name=region)
+
+
+def get_s3_client(region=AWS_REGION):
+    return boto3.client('s3', region_name=region)
 
 
 ## EC2 stuff
@@ -146,7 +151,7 @@ def create_instances(*,
 ### S3 stuff
 
 
-def get_bucket(s3, bucket_name):
+def get_bucket(s3_resource, bucket_name):
     """get bucket
 
     Args:
@@ -156,10 +161,10 @@ def get_bucket(s3, bucket_name):
     Returns:
         (s3.bucket, bool): bucket, if-it-exists
     """
-    bucket = s3.Bucket(bucket_name)
+    bucket = s3_resource.Bucket(bucket_name)
     exists = True
     try:
-        s3.meta.client.head_bucket(Bucket='mybucket')
+        s3_resource.meta.client.head_bucket(Bucket='mybucket')
     except botocore.exceptions.ClientError as e:
         # If a client error is thrown, then check that it was a 404 error.
         # If it was a 404 error, then the bucket does not exist.
@@ -169,7 +174,7 @@ def get_bucket(s3, bucket_name):
     return bucket, exists
 
 
-def get_bucket_names(s3):
+def get_bucket_names(s3_resource):
     """get a list of available bucket names
 
     Args:
@@ -178,21 +183,37 @@ def get_bucket_names(s3):
     Returns:
         [list]: list of strings
     """
-    return [bucket.name for bucket in s3.buckets.all()]
+    return [bucket.name for bucket in s3_resource.buckets.all()]
 
 
-def write_file_to_bucket(*, s3, bucket_name, remote_filepath, local_filepath):
-    """write a file to a bucket"""
-    s3.Object(bucket_name,
-              remote_filepath).put(Body=open(local_filepath, 'rb'))
+def upload_file(s3_client, file_name, bucket, object_name=None):
+    """Upload a file to an S3 bucket
+
+    :param file_name: File to upload
+    :param bucket: Bucket to upload to
+    :param object_name: S3 object name. If not specified then file_name is used
+    :return: True if file was uploaded, else False
+    """
+
+    # If S3 object_name was not specified, use file_name
+    if object_name is None:
+        object_name = os.path.basename(file_name)
+
+    try:
+        response = s3_client.upload_file(file_name, bucket, object_name)
+    except botocore.exceptions.ClientError as e:
+        print(e)
+        return False
+    return True
 
 
-def download_file_from_bucket(s3, bucket_name, remote_filepath,
+def download_file_from_bucket(s3_client, bucket_name, remote_filepath,
                               local_filepath):
     """download a file from a bucket"""
 
     try:
-        s3.Bucket(bucket_name).download_file(remote_filepath, local_filepath)
+        s3_client.Bucket(bucket_name).download_file(remote_filepath,
+                                                    local_filepath)
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == "404":
             print("The object does not exist.")
