@@ -22,6 +22,7 @@ def install_remotely_whl(*,
                          install_script=Path(__file__).parent / "scripts" /
                          "install.sh",
                          username="ubuntu",
+                         blocking=False,
                          remote_base="/home/ubuntu/",
                          verbose=True):
     """
@@ -41,13 +42,17 @@ def install_remotely_whl(*,
         remote_base, "install.sh")
 
     # remove the existing wheel files if they exists
+
+    rm_cmd = f""" rm {os.path.join(remote_base, '*whl')}"""
     if verbose:
         print("Removing existing wheels")
-    rm_cmd = f""" rm {os.path.join(remote_base, '*whl')} 2> /dev/null """
+        print(rm_cmd)
+
     results = run_bash_on_instance(command_strings=[rm_cmd],
                                    hostname=hostname,
                                    username=username,
                                    key_filepath=key_filepath,
+                                   blocking=True,
                                    verbose=True)
 
     if verbose:
@@ -65,6 +70,7 @@ def install_remotely_whl(*,
                                    hostname=hostname,
                                    username=username,
                                    key_filepath=key_filepath,
+                                   blocking=True,
                                    verbose=True)
     return results
 
@@ -137,7 +143,7 @@ def print_bash_results(results):
 def run_bash_on_instance(*,
                          command_strings,
                          hostname,
-                         username,
+                         username="ubuntu",
                          key_filepath,
                          blocking=True,
                          verbose=True):
@@ -148,11 +154,14 @@ def run_bash_on_instance(*,
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(hostname, username=username, key_filename=key_filepath)
         for cmd in command_strings:
-            res = run_command_helper(client,
-                                     cmd,
-                                     blocking=blocking,
-                                     verbose=verbose)
-
+            try:
+                res = run_command_helper(client,
+                                         cmd,
+                                         blocking=blocking,
+                                         verbose=verbose)
+            except Exception as e:
+                res = {}
+                print(f"Failed to run cmd : {e}")
             for k, v in res.items():
                 if return_strings.get(k) is None:
                     return_strings[k] = []

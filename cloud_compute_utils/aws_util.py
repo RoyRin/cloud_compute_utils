@@ -212,8 +212,9 @@ def download_file_from_bucket(s3_client, bucket_name, remote_filepath,
     """download a file from a bucket"""
 
     try:
-        s3_client.Bucket(bucket_name).download_file(remote_filepath,
-                                                    local_filepath)
+        s3.download_file(bucket_name, remote_filepath, local_filepath)
+        #s3_client.Bucket(bucket_name).download_file(remote_filepath,
+        #                                            local_filepath)
     except botocore.exceptions.ClientError as e:
         if e.response['Error']['Code'] == "404":
             print("The object does not exist.")
