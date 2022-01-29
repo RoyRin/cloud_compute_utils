@@ -48,10 +48,11 @@ sudo apt update && sudo apt install python3-pip -y
 python3 -m pip install {" ".join(remote_wheel_paths)} """
     if verbose:
         print(bash_cmd)
-    run_bash_on_instance(command_strings=[bash_cmd],
-                         hostname=hostname,
-                         username=username,
-                         key_filepath=key_filepath)
+    results = run_bash_on_instance(command_strings=[bash_cmd],
+                                   hostname=hostname,
+                                   username=username,
+                                   key_filepath=key_filepath,
+                                   verbose=True)
 
 
 def install_remotely_whl(*,
@@ -79,6 +80,15 @@ def install_remotely_whl(*,
     local_to_remote_filenames[install_script] = os.path.join(
         remote_base, "install.sh")
 
+    # remove the existing wheel files if they exists
+
+    rm_cmd = f""" rm {os.path.join(remote_base, '*whl')} """
+    results = run_bash_on_instance(command_strings=[rm_cmd],
+                                   hostname=hostname,
+                                   username=username,
+                                   key_filepath=key_filepath,
+                                   verbose=True)
+
     copy_files_to_instance(local_to_remote_filenames=local_to_remote_filenames,
                            hostname=hostname,
                            username=username,
@@ -86,10 +96,12 @@ def install_remotely_whl(*,
 
     bash_cmd = f""" bash {remote_base}/install.sh """
 
-    run_bash_on_instance(command_strings=[bash_cmd],
-                         hostname=hostname,
-                         username=username,
-                         key_filepath=key_filepath)
+    results = run_bash_on_instance(command_strings=[bash_cmd],
+                                   hostname=hostname,
+                                   username=username,
+                                   key_filepath=key_filepath,
+                                   verbose=True)
+    return results
 
 
 def copy_cmd_to_file(cmd, filename):
@@ -128,21 +140,34 @@ def copy_files_to_instance(*,
 
 
 def run_command_helper(client, cmd, verbose=False):
-    return_strings = []
+    results = {"stdout": [], "stderr": []}
     stdin, stdout, stderr = client.exec_command(cmd)
+    exit_status = stdout.channel.recv_exit_status()  # Blocking call
 
-    if len(list(stderr)) != 0:
-        print("Error!")
-        print(stderr.readlines())
-        for line in stderr:
-            print(line)
+    if verbose:
+        if exit_status == 0:
+            print("Command successful")
+        else:
+            print("Error", exit_status)
 
+    stderr = stderr.readlines()
+
+    for line in stderr:
+        results["stderr"].append(line)
+
+    stdout = stdout.readlines()
     for line in stdout:
-        if verbose:
-            print(f"{line}")
-        return_strings.append(line)
+        results["stdout"].append(line)
 
-    return return_strings
+    return results
+
+
+def print_bash_results(results):
+    """ print results from the run_command_helper"""
+    for key, value in results.items():
+        print(f"{key}:")
+        for line in value:
+            print(f"\t{line}")
 
 
 def run_bash_on_instance(*,
@@ -150,15 +175,22 @@ def run_bash_on_instance(*,
                          hostname,
                          username,
                          key_filepath,
-                         verbose=False):
+                         verbose=True):
     """ runs a command on an instance """
-    return_strings = []
+    return_strings = {}
     # Connect to remote host
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         client.connect(hostname, username=username, key_filename=key_filepath)
         for cmd in command_strings:
-            return_strings += run_command_helper(client, cmd, verbose=verbose)
+            res = run_command_helper(client, cmd, verbose=verbose)
+
+            for k, v in res.items():
+                if return_strings.get(k) is None:
+                    return_strings[k] = []
+                return_strings[k].append(v)
+    if verbose:
+        print_bash_results(return_strings)
     return return_strings
 
 
@@ -173,13 +205,13 @@ def _run_this_file_on_instance(hostname, username, key_filepath):
                            hostname=hostname,
                            username=username,
                            key_filepath=key_filepath)
-    run_bash_on_instance(command_str=command_str,
-                         hostname=hostname,
-                         username=username,
-                         key_filepath=key_filepath)
+    res = run_bash_on_instance(command_str=command_str,
+                               hostname=hostname,
+                               username=username,
+                               key_filepath=key_filepath)
 
 
-def install_remotely_from_src(
+def __install_remotely_from_src(
         *,
         hostname,
         key_filepath,
@@ -191,7 +223,7 @@ def install_remotely_from_src(
         verbose=True):
     """
     install the code on the remote instances
-    
+    -- to remove soon
     """
     remote_BASE_DIR = Path("/home/ubuntu/")
 
