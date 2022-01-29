@@ -15,46 +15,6 @@ def get_wheels(wheel_dir):
     ]
 
 
-def install_remotely_whl_using_cmd(*,
-                                   hostname,
-                                   key_filepath,
-                                   wheel_dir=Path(__file__).parent.parent /
-                                   "dist",
-                                   username="ubuntu",
-                                   verbose=True):
-    """
-    install the code on the remote instances, using wheels
-        Note: wheel needs to exist in the wheel_dir
-    
-    """
-    wheels = get_wheels(wheel_dir)
-    if len(wheels) == 0:
-        raise ValueError(f"No wheels found in {wheel_dir}")
-
-    local_to_remote_filenames = {
-        wheel_path: os.path.join("/home/ubuntu/", os.path.basename(wheel_path))
-        for wheel_path in wheels
-    }
-
-    copy_files_to_instance(local_to_remote_filenames=local_to_remote_filenames,
-                           hostname=hostname,
-                           username=username,
-                           key_filepath=key_filepath)
-    remote_wheel_paths = local_to_remote_filenames.values()
-    bash_cmd = f"""
-#!/bin/bash
-set -x
-sudo apt update && sudo apt install python3-pip -y
-python3 -m pip install {" ".join(remote_wheel_paths)} """
-    if verbose:
-        print(bash_cmd)
-    results = run_bash_on_instance(command_strings=[bash_cmd],
-                                   hostname=hostname,
-                                   username=username,
-                                   key_filepath=key_filepath,
-                                   verbose=True)
-
-
 def install_remotely_whl(*,
                          hostname,
                          key_filepath,
@@ -83,7 +43,7 @@ def install_remotely_whl(*,
     # remove the existing wheel files if they exists
     if verbose:
         print("Removing existing wheels")
-    rm_cmd = f""" rm {os.path.join(remote_base, '*whl')} """
+    rm_cmd = f""" rm {os.path.join(remote_base, '*whl')} 2> /dev/null """
     results = run_bash_on_instance(command_strings=[rm_cmd],
                                    hostname=hostname,
                                    username=username,
@@ -147,22 +107,21 @@ def copy_files_to_instance(*,
 def run_command_helper(client, cmd, blocking=True, verbose=False):
     results = {"stdout": [], "stderr": []}
     stdin, stdout, stderr = client.exec_command(cmd)
-    if blocking:
+    if blocking:  # im not sure this is working.
         exit_status = stdout.channel.recv_exit_status()  # Blocking call
         if verbose:
             if exit_status == 0:
                 print("Command successful")
             else:
                 print("Error", exit_status)
+        stderr = stderr.readlines()
 
-    stderr = stderr.readlines()
+        for line in stderr:
+            results["stderr"].append(line)
 
-    for line in stderr:
-        results["stderr"].append(line)
-
-    stdout = stdout.readlines()
-    for line in stdout:
-        results["stdout"].append(line)
+        stdout = stdout.readlines()
+        for line in stdout:
+            results["stdout"].append(line)
 
     return results
 

@@ -99,7 +99,7 @@ def terminate_all_instances_with_keypair(ec2,
     if dry_run:
         print("dry run")
     instances = get_instances_with_keypair(ec2, keypair_name)
-    if instance_ids is not None:
+    if instance_ids is not None and len(instance_ids) > 0:
         # if instance_ids provided, only include those
         instances = [
             instance for instance in instances if instance.id in instance_ids
