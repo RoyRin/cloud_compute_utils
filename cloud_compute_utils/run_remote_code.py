@@ -110,25 +110,34 @@ def copy_files_to_instance(*,
     client.close()
 
 
-def run_command_helper(client, cmd, blocking=True, verbose=False):
+def run_command_helper(client,
+                       cmd,
+                       blocking=True,
+                       get_logs=False,
+                       verbose=False):
     results = {"stdout": [], "stderr": []}
-    stdin, stdout, stderr = client.exec_command(cmd)
-    if blocking:  # im not sure this is working.
+    if not blocking:
+        transport = client.get_transport()
+        channel = transport.open_session()
+        stdin, stdout, stderr = client.exec_command(cmd)
+        print("running using transport")
+        print(cmd)
+    else:
+        print("blocking")
+        stdin, stdout, stderr = client.exec_command(cmd)
         exit_status = stdout.channel.recv_exit_status()  # Blocking call
-        if verbose:
-            if exit_status == 0:
-                print("Command successful")
-            else:
-                print("Error", exit_status)
-        stderr = stderr.readlines()
-
-        for line in stderr:
-            results["stderr"].append(line)
-
-        stdout = stdout.readlines()
-        for line in stdout:
-            results["stdout"].append(line)
-
+        if get_logs:  # This is a truly blocking call
+            if verbose:
+                if exit_status == 0:
+                    print("Command successful")
+                else:
+                    print("Error", exit_status)
+            stderr = stderr.readlines()
+            for line in stderr:
+                results["stderr"].append(line)
+            stdout = stdout.readlines()
+            for line in stdout:
+                results["stdout"].append(line)
     return results
 
 
@@ -150,10 +159,16 @@ def run_bash_on_instance(*,
     """ runs a command on an instance """
     return_strings = {}
     # Connect to remote host
+
     with paramiko.SSHClient() as client:
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(hostname, username=username, key_filename=key_filepath)
+        client.connect(hostname,
+                       username=username,
+                       key_filename=key_filepath,
+                       timeout=10)
         for cmd in command_strings:
+            if verbose:
+                print("command is :", cmd)
             try:
                 res = run_command_helper(client,
                                          cmd,
@@ -166,9 +181,9 @@ def run_bash_on_instance(*,
                 if return_strings.get(k) is None:
                     return_strings[k] = []
                 return_strings[k].append(v)
-    if verbose:
-        print_bash_results(return_strings)
-    return return_strings
+        if verbose:
+            print_bash_results(return_strings)
+            return return_strings
 
 
 def _run_this_file_on_instance(hostname, username, key_filepath):

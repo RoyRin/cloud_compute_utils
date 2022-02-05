@@ -72,9 +72,19 @@ def get_running_instances(ec2):
     return filtered_ec2s(ec2, is_running)
 
 
-def terminate_instance(instance, verbose=False):
+def stop_instance(instance, verbose=False):
     try:
         instance.stop()
+        if verbose:
+            print(f"Stop {instance.id}")
+    except Exception as e:
+        print(f"skipping instance {instance.id} - {instance.state['Name']}")
+        print(e)
+
+
+def terminate_instance(instance, verbose=False):
+    stop_instance(instance, verbose=verbose)
+    try:
         instance.terminate()
         if verbose:
             print(f"terminated {instance.id}")
@@ -83,19 +93,13 @@ def terminate_instance(instance, verbose=False):
         # print(e)
 
 
-def terminate_all_instances_with_keypair(ec2,
-                                         keypair_name,
-                                         instance_ids=None,
-                                         dry_run=True,
-                                         verbose=False):
-    """[summary]
-
-    Args:
-        ec2 ([type]): [description]
-        keypair_name ([type]): [description]
-        instance_ids ([list], optional): [list of instance ids]. Defaults to None
-        verbose=False.
-    """
+def do_x_all_instances_with_keypair(
+        ec2,
+        keypair_name,
+        instance_ids=None,
+        action=None,  # function of the form: func(instance, verbose=False)
+        dry_run=True,
+        verbose=False):
     if dry_run:
         print("dry run")
     instances = get_instances_with_keypair(ec2, keypair_name)
@@ -105,15 +109,41 @@ def terminate_all_instances_with_keypair(ec2,
             instance for instance in instances if instance.id in instance_ids
         ]
     for instance in instances:
-
         if instance.state['Name'] == 'terminated':
             continue
         if dry_run:
-            print(f"would terminate {instance.id} - {instance_str(instance)}")
+            print(f"would act on {instance.id} - {instance_str(instance)}")
             continue
-        terminate_instance(instance, verbose=verbose)
+
+        action(instance, verbose=verbose)
         if verbose:
             print_instance(instance)
+
+
+def terminate_all_instances_with_keypair(ec2,
+                                         keypair_name,
+                                         instance_ids=None,
+                                         dry_run=True,
+                                         verbose=False):
+    do_x_all_instances_with_keypair(ec2,
+                                    keypair_name=keypair_name,
+                                    instance_ids=instance_ids,
+                                    action=terminate_instance,
+                                    dry_run=dry_run,
+                                    verbose=verbose)
+
+
+def stop_all_instances_with_keypair(ec2,
+                                    keypair_name,
+                                    instance_ids=None,
+                                    dry_run=True,
+                                    verbose=False):
+    do_x_all_instances_with_keypair(ec2,
+                                    keypair_name=keypair_name,
+                                    instance_ids=instance_ids,
+                                    action=stop_instance,
+                                    dry_run=dry_run,
+                                    verbose=verbose)
 
 
 def create_instances(*,

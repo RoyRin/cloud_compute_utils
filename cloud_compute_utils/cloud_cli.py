@@ -114,8 +114,8 @@ def list_ec2(ctx, keypair_name, region):
 
 
 @cli.command(
-    name="spin-down-ec2",
-    help=""" Spins down all instances associated with a specific keypair """)
+    name="terminate-ec2",
+    help="""Terminates all instances associated with a specific keypair """)
 @click.option(
     '--keypair-name',
     "-k",
@@ -136,7 +136,7 @@ def list_ec2(ctx, keypair_name, region):
               help='AWS region')
 @click.option("--dry-run", "-d", is_flag=True, help="dry run")
 @click.pass_context
-def spin_down_ec2(ctx, keypair_name, instance_ids, region, dry_run):
+def terminate_ec2(ctx, keypair_name, instance_ids, region, dry_run):
     ec2 = aws_util.get_ec2_client(region=region)
     # get instances
     aws_util.terminate_all_instances_with_keypair(ec2,
@@ -144,6 +144,39 @@ def spin_down_ec2(ctx, keypair_name, instance_ids, region, dry_run):
                                                   instance_ids=instance_ids,
                                                   dry_run=dry_run,
                                                   verbose=True)
+
+
+@cli.command(name="stop-ec2",
+             help="""Stops all instances associated with a specific keypair """
+             )
+@click.option(
+    '--keypair-name',
+    "-k",
+    required=True,
+    help=
+    'name of keypair instance created with (will spin down all keypair names if not specified)'
+)
+@click.option(
+    '--instance-ids',
+    "-i",
+    multiple=True,
+    help='name of instances (if not provided, this will spin down all instances)'
+)
+@click.option('--region',
+              "-r",
+              default=AWS_REGION,
+              show_default=True,
+              help='AWS region')
+@click.option("--dry-run", "-d", is_flag=True, help="dry run")
+@click.pass_context
+def stop_ec2(ctx, keypair_name, instance_ids, region, dry_run):
+    ec2 = aws_util.get_ec2_client(region=region)
+    # get instances
+    aws_util.stop_all_instances_with_keypair(ec2,
+                                             keypair_name,
+                                             instance_ids=instance_ids,
+                                             dry_run=dry_run,
+                                             verbose=True)
 
 
 def main():
