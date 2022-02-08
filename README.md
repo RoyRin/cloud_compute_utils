@@ -14,6 +14,7 @@
   4. spin-down-ec2              Spins down all instances associated with a specific keyname-pair
   5. spin-up-ec2                Spin up EC2 instance(s)
 
+![cloud-cli Help Image](imgs/help_image.png)
 
 Note about Spin-up-ec2, it is recommended that you spin up using a permissioned file that you already have saved in AWS
 pem-file. The public/secret pem-file combo should be saved in AWS under a specific name. When running `spin-up-ec2` provide that name, as `spin-up-ec2 -k <keypair_name>`.
