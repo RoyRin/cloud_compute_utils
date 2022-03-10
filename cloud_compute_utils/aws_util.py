@@ -9,29 +9,29 @@ DEFAULT_AMI = "ami-04505e74c0741db8d"  # ubuntu
 
 
 def get_ec2_client(region=AWS_REGION):
-    """get EC2 client
-
-    Returns:
-        [type]: client
-    """
+    """get EC2 client"""
     ec2 = boto3.resource('ec2', region_name=region)
     return ec2
 
 
 def get_s3_resource(region=AWS_REGION):
+    """" get S3 resource"""
     return boto3.resource('s3', region_name=region)
 
 
 def get_s3_client(region=AWS_REGION):
+    """ get S3 client"""
     return boto3.client('s3', region_name=region)
 
 
 ## EC2 stuff
 def get_attached_volumes(instance):
+    """ get list of attached volumes"""
     return [vol for vol in instance.volumes.all()]
 
 
 def instance_str(instance):
+    """ string representation of instance"""
     total_size = sum(vol.size for vol in get_attached_volumes(instance))
     return (
         f"{instance.id}, {instance.public_dns_name} : {instance.state['Name']} ({total_size} GB)"
@@ -39,6 +39,7 @@ def instance_str(instance):
 
 
 def print_instance(instance):
+    """ print instance"""
     print(instance_str(instance))
 
 
@@ -55,24 +56,39 @@ def get_ec2_instances(ec2):
     return instances
 
 
-def filtered_ec2s(ec2, filter_function):
-
+def filtered_ec2s(ec2, filter_functions):
+    """ filter ec2 instances by filter_function"""
     instances = get_ec2_instances(ec2)
-    filtered_instances = [
-        instance for instance in instances if filter_function(instance)
-    ]
+    filtered_instances = []
+    for instance in instances:
+        if all(filter_functions(instance)):
+            filtered_instances.append(instance)
     return filtered_instances
 
 
+def has_tag(instance, key, value=None):
+    """ check if instance has a tag with a given key"""
+    tags = {tag['Key']: tag['Value'] for tag in instance.tags}
+    if key in tags:
+        if value is None:
+            return True
+        else:
+            return tags[key] == value
+    return False
+
+
 def is_running(instance):
+    """ helper function, returns True if instance is running"""
     return instance.state['Name'] == 'running'
 
 
 def get_running_instances(ec2):
-    return filtered_ec2s(ec2, is_running)
+    """ returns a list of running instances which are running"""
+    return filtered_ec2s(ec2, [is_running])
 
 
 def stop_instance(instance, verbose=False):
+    """ stop instance"""
     try:
         instance.stop()
         if verbose:
@@ -83,6 +99,7 @@ def stop_instance(instance, verbose=False):
 
 
 def terminate_instance(instance, verbose=False):
+    """ stop and terminate instance"""
     stop_instance(instance, verbose=verbose)
     try:
         instance.terminate()
@@ -100,6 +117,7 @@ def do_x_all_instances_with_keypair(
         action=None,  # function of the form: func(instance, verbose=False)
         dry_run=True,
         verbose=False):
+    """ call action(instance, verbose) for all instances with a given keypair"""
     if dry_run:
         print("dry run")
     instances = get_instances_with_keypair(ec2, keypair_name)
@@ -125,6 +143,7 @@ def terminate_all_instances_with_keypair(ec2,
                                          instance_ids=None,
                                          dry_run=True,
                                          verbose=False):
+    """ terminate all instances with a given keypair"""
     do_x_all_instances_with_keypair(ec2,
                                     keypair_name=keypair_name,
                                     instance_ids=instance_ids,
@@ -138,6 +157,7 @@ def stop_all_instances_with_keypair(ec2,
                                     instance_ids=None,
                                     dry_run=True,
                                     verbose=False):
+    """ stop all instances with a given keypair"""
     do_x_all_instances_with_keypair(ec2,
                                     keypair_name=keypair_name,
                                     instance_ids=instance_ids,
@@ -156,6 +176,8 @@ def create_instances(*,
                      security_group_ids=None,
                      size=10,
                      device_name="/dev/sda1"):
+    """ Spin up new EC2 instances
+    returns list of instance objects"""
     image_id = image_id or DEFAULT_AMI
     security_group_ids_ = security_group_ids or []
     instance_type = instance_type or "t2.micro"
@@ -242,7 +264,7 @@ def download_file_from_bucket(s3_client, bucket_name, remote_filepath,
     """download a file from a bucket"""
 
     try:
-        s3.download_file(bucket_name, remote_filepath, local_filepath)
+        s3_client.download_file(bucket_name, remote_filepath, local_filepath)
         #s3_client.Bucket(bucket_name).download_file(remote_filepath,
         #                                            local_filepath)
     except botocore.exceptions.ClientError as e:
@@ -255,7 +277,7 @@ def download_file_from_bucket(s3_client, bucket_name, remote_filepath,
 ## Security Group stuff
 def get_instances_with_keypair(ec2, keypair_name):
     return filtered_ec2s(ec2,
-                         lambda instance: instance.key_name == keypair_name)
+                         [lambda instance: instance.key_name == keypair_name])
 
 
 def print_security_group(security_group):
