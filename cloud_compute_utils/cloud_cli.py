@@ -89,6 +89,44 @@ def list_security_groups(ctx, region):
         aws_util.print_security_group(sg)
 
 
+@cli.command(name="list-buckets", help=""" Lists all Buckets""")
+@click.option('--region',
+              "-r",
+              default=AWS_REGION,
+              show_default=True,
+              help='AWS region')
+@click.pass_context
+def list_buckets(ctx, region):
+    s3_resource = aws_util.get_s3_resource(region=region)
+    print("Buckets:")
+    for bucket_name in aws_util.get_bucket_names(s3_resource):
+        print(f"\t{bucket_name}")
+
+
+@cli.command(name="list-bucket-contents", help=""" Lists bucket contents""")
+@click.option('--bucket-name', "-b", required=True, help='Bucket name')
+@click.option('--prefix', "-p", default="", help='prefix to search for')
+@click.option('--match-string',
+              "-m",
+              default="",
+              help='add if you want to see files that contain this string')
+@click.option('--region',
+              "-r",
+              default=AWS_REGION,
+              show_default=True,
+              help='AWS region')
+@click.pass_context
+def list_bucket_contents(ctx, bucket_name, prefix, match_string, region):
+    s3_resource = aws_util.get_s3_resource(region=region)
+    print("Bucket contents")
+
+    for content in aws_util.get_bucket_contents(s3_resource,
+                                                bucket_name,
+                                                prefix=prefix):
+        if match_string in content:
+            print(f"\t{content}")
+
+
 @cli.command(
     name="list-ec2",
     help=

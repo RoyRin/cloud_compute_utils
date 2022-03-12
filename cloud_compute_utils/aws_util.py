@@ -226,6 +226,14 @@ def get_bucket(s3_resource, bucket_name):
     return bucket, exists
 
 
+def get_bucket_contents(s3_resource, bucket_name, prefix=""):
+    bucket, exists = get_bucket(s3_resource, bucket_name)
+    if not exists:
+        raise Exception(f"Bucket {bucket_name} does not exist")
+
+    return [obj.key for obj in bucket.objects.filter(Prefix=prefix)]
+
+
 def get_bucket_names(s3_resource):
     """get a list of available bucket names
 
