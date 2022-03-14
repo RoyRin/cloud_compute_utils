@@ -9,7 +9,7 @@ authors = ["Roy Rinberg <royrinberg@gmail.com>"]
 cloud-cli = "cloud_compute_utils.cloud_cli:main"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7.5"
 toolz = "^0.11.2"
 PyYAML = "^6.0"
 click = "^8.0.3"
