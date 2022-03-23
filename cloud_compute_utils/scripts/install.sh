@@ -2,5 +2,4 @@
 set -x
 
 source activate pytorch_p38
-pip install *whl
-
+pip install *whl --ignore-installed

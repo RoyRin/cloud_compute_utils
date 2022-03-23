@@ -56,12 +56,16 @@ def get_ec2_instances(ec2):
     return instances
 
 
-def filtered_ec2s(ec2, filter_functions):
+def filtered_ec2s(ec2, filter_functions, verbose=False):
     """ filter ec2 instances by filter_function"""
     instances = get_ec2_instances(ec2)
     filtered_instances = []
     for instance in instances:
-        if all(filter_functions(instance)):
+        if verbose:
+            print(instance)
+        if all(
+                filter_function(instance)
+                for filter_function in filter_functions):
             filtered_instances.append(instance)
     return filtered_instances
 
