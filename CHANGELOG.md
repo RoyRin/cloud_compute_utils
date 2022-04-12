@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+- lots of general improvements like CLI improvements, e.g.:
+	- list bucket contents
+	- ability to view by tag
+- bump to python3.8 (slightly breaking)
+
 ## 0.3.0
 - improve logging for running commands
 - make command-running blocking

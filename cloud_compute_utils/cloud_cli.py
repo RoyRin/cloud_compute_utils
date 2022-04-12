@@ -133,21 +133,33 @@ def list_bucket_contents(ctx, bucket_name, prefix, match_string, region):
     """ Lists all non-terminated instances (optionally: associated with a specific keypair)"""
 )
 @click.option('--keypair-name', "-k", default=None, help='name of keypair')
+@click.option('--tag-key', "-t", default=None, help='tag key')
+@click.option('--tag-value', "-v", default=None, help='tag value')
 @click.option('--region',
               "-r",
               default=AWS_REGION,
               show_default=True,
               help='AWS region')
 @click.pass_context
-def list_ec2(ctx, keypair_name, region):
+def list_ec2(ctx, keypair_name, tag_key, tag_value, region):
+
     ec2 = aws_util.get_ec2_client(region=region)
+
+    filter_funcs = []
+    # ignore terminated
+    filter_funcs.append(
+        lambda instance: instance.state['Name'] != 'terminated')
+    # only look by keypair
     if keypair_name is not None:
-        instances = aws_util.get_instances_with_keypair(ec2, keypair_name)
-    else:
-        instances = aws_util.get_ec2_instances(ec2)
+        filter_funcs.append(lambda instance: instance.key_name == keypair_name)
+    # only look by tag key
+    if tag_key is not None:
+        filter_funcs.append(lambda instance: aws_util.has_tag(
+            instance, key=tag_key, value=tag_value))
+
+    instances = aws_util.filtered_ec2s(ec2=ec2, filter_functions=filter_funcs)
+
     for instance in instances:
-        if instance.state['Name'] == 'terminated':
-            continue
         aws_util.print_instance(instance)
 
 
