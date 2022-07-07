@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.0
+- drop python versioning to 3.7.5 from 3.8
+
 ## 0.5.0
 - lots of general improvements like CLI improvements, e.g.:
 	- list bucket contents
