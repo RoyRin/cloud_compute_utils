@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cloud_compute_utils"
-version = "0.6.0"
+version = "0.7.0"
 description = ""
 
 authors = ["Roy Rinberg <royrinberg@gmail.com>"]
@@ -11,7 +11,7 @@ cloud-cli = "cloud_compute_utils.cloud_cli:main"
 [tool.poetry.dependencies]
 python = "^3.7.5"
 #python = "^3.8"
-toolz = "^0.11.2"
+toolz = "^0.12.0"
 PyYAML = "^6.0"
 click = "^8.0.3"
 boto3 = "1.20.32"

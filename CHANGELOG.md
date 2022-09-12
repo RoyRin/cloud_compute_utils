@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.0
+* bump toolz version for compatibility
+
 ## 0.6.0
 - drop python versioning to 3.7.5 from 3.8
 

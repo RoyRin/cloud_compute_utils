@@ -740,7 +740,7 @@ python-versions = ">=3.6,<4.0"
 
 [[package]]
 name = "toolz"
-version = "0.11.2"
+version = "0.12.0"
 description = "List processing tools and functional utilities"
 category = "main"
 optional = false
@@ -833,7 +833,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7.5"
-content-hash = "6811d47a2e5ffd573133c012ebb029b44d7e1f761872cc8825fd1ce4ce82a924"
+content-hash = "7e684dc6366f92e4892c5ba7628084d4586807f913c0097e95bd7490ae0dd0d5"
 
 [metadata.files]
 appnope = [
@@ -1433,10 +1433,7 @@ tomlkit = [
     {file = "tomlkit-0.11.1-py3-none-any.whl", hash = "sha256:1c5bebdf19d5051e2e1de6cf70adfc5948d47221f097fcff7a3ffc91e953eaf5"},
     {file = "tomlkit-0.11.1.tar.gz", hash = "sha256:61901f81ff4017951119cd0d1ed9b7af31c821d6845c8c477587bbdcd5e5854e"},
 ]
-toolz = [
-    {file = "toolz-0.11.2-py3-none-any.whl", hash = "sha256:a5700ce83414c64514d82d60bcda8aabfde092d1c1a8663f9200c07fdcc6da8f"},
-    {file = "toolz-0.11.2.tar.gz", hash = "sha256:6b312d5e15138552f1bda8a4e66c30e236c831b612b2bf0005f8a1df10a4bc33"},
-]
+toolz = []
 tornado = [
     {file = "tornado-6.2-cp37-abi3-macosx_10_9_universal2.whl", hash = "sha256:20f638fd8cc85f3cbae3c732326e96addff0a15e22d80f049e00121651e82e72"},
     {file = "tornado-6.2-cp37-abi3-macosx_10_9_x86_64.whl", hash = "sha256:87dcafae3e884462f90c90ecc200defe5e580a7fbbb4365eda7c7c1eb809ebc9"},
